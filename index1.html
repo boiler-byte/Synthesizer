@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Cooler Synth</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at 50% 0%, #1a1a2e, #0a0a15 70%);
+    font-family: 'Segoe UI', sans-serif;
+    color: #fff;
+    overflow: hidden;
+  }
+
+  .synth {
+    background: linear-gradient(145deg, #1e1e2f, #14141f);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 
+      0 20px 60px rgba(0, 0, 0, 0.8),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 40px rgba(0, 255, 200, 0.1);
+    border: 1px solid rgba(0, 255, 200, 0.15);
+    position: relative;
+  }
+
+  .synth::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00ffc8, #ff00aa, transparent);
+    border-radius: 20px 20px 0 0;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 18px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 25px;
+    color: #00ffc8;
+    text-shadow: 0 0 10px rgba(0, 255, 200, 0.6);
+    font-weight: 300;
+  }
+
+  .controls {
+    display: flex;
+    gap: 25px;
+    margin-bottom: 25px;
+    justify-content: center;
+  }
+
+  .knob-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .knob-group label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #888;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 6px;
+    background: #0a0a15;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: radial-gradient(circle at 30% 30%, #00ffc8, #009977);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 
+      0 0 10px rgba(0, 255, 200, 0.8),
+      0 2px 4px rgba(0, 0, 0, 0.5);
+    transition: transform 0.1s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: radial-gradient(circle at 30% 30%, #00ffc8, #009977);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 255, 200, 0.8);
+  }
+
+  .keys {
+    display: flex;
+    position: relative;
+    height: 180px;
+    user-select: none;
+  }
+
+  .key {
+    width: 50px;
+    background: linear-gradient(180deg, #f5f5f5, #d0d0d0);
+    border-radius: 0 0 6px 6px;
+    border: 1px solid #333;
+    border-top: none;
+    cursor: pointer;
+    transition: all 0.08s;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 10px;
+    font-size: 10px;
+    color: #888;
+    position: relative;
+    box-shadow: 
+      inset 0 -4px 8px rgba(0, 0, 0, 0.1),
+      0 4px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .key.white {
+    z-index: 1;
+  }
+
+  .key.white:active,
+  .key.white.active {
+    background: linear-gradient(180deg, #00ffc8, #009977);
+    color: #fff;
+    transform: translateY(2px);
+    box-shadow: 
+      inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+      0 0 20px rgba(0, 255, 200, 0.8);
+  }
+
+  .key.black {
+    width: 32px;
+    height: 110px;
+    background: linear-gradient(180deg, #333, #0a0a15);
+    color: #666;
+    position: absolute;
+    z-index: 2;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 
+      inset 0 -3px 6px rgba(255, 255, 255, 0.05),
+      0 5px 10px rgba(0, 0, 0, 0.8);
+    padding-bottom: 8px;
+  }
+
+  .key.black:active,
+  .key.black.active {
+    background: linear-gradient(180deg, #009977, #006644);
+    color: #fff;
+    transform: translateY(2px);
+    box-shadow: 
+      inset 0 -2px 4px rgba(0, 0, 0, 0.5),
+      0 0 20px rgba(0, 255, 200, 0.9);
+  }
+
+  .display {
+    margin-top: 20px;
+    height: 30px;
+    background: #0a0a15;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Courier New', monospace;
+    color: #00ffc8;
+    letter-spacing: 3px;
+    font-size: 12px;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 0 8px rgba(0, 255, 200, 0.8);
+  }
+
+  .wave-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .wave-btn {
+    padding: 6px 14px;
+    background: #0a0a15;
+    border: 1px solid #333;
+    color: #666;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .wave-btn:hover {
+    border-color: #00ffc8;
+    color: #00ffc8;
+  }
+
+  .wave-btn.active {
+    background: linear-gradient(180deg, #00ffc8, #009977);
+    color: #0a0a15;
+    border-color: #00ffc8;
+    box-shadow: 0 0 15px rgba(0, 255, 200, 0.6);
+  }
+</style>
+</head>
+<body>
+  <div class="synth">
+    <h1>◆ Neon Synth ◆</h1>
+
+    <div class="wave-buttons">
+      <button class="wave-btn active" data-wave="sine">Sine</button>
+      <button class="wave-btn" data-wave="square">Square</button>
+      <button class="wave-btn" data-wave="sawtooth">Saw</button>
+      <button class="wave-btn" data-wave="triangle">Triangle</button>
+    </div>
+
+    <div class="controls">
+      <div class="knob-group">
+        <label>Volume</label>
+        <input type="range" id="volume" min="0" max="1" step="0.01" value="0.3">
+      </div>
+      <div class="knob-group">
+        <label>Attack</label>
+        <input type="range" id="attack" min="0.01" max="1" step="0.01" value="0.05">
+      </div>
+      <div class="knob-group">
+        <label>Release</label>
+        <input type="range" id="release" min="0.05" max="2" step="0.05" value="0.4">
+      </div>
+    </div>
+
+    <div class="keys" id="keys"></div>
+
+    <div class="display" id="display">READY</div>
+  </div>
+
+<script>
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const ctx = new AudioContext();
+
+  const keysContainer = document.getElementById('keys');
+  const display = document.getElementById('display');
+  const volumeSlider = document.getElementById('volume');
+  const attackSlider = document.getElementById('attack');
+  const releaseSlider = document.getElementById('release');
+
+  let currentWave = 'sine';
+  const activeOscillators = new Map();
+
+  // Noten: Weiße + schwarze Tasten
+  const notes = [
+    { note: 'C4', freq: 261.63, type: 'white', key: 'A' },
+    { note: 'C#4', freq: 277.18, type: 'black', offset: 34, key: 'W' },
+    { note: 'D4', freq: 293.66, type: 'white', key: 'S' },
+    { note: 'D#4', freq: 311.13, type: 'black', offset: 84, key: 'E' },
+    { note: 'E4', freq: 329.63, type: 'white', key: 'D' },
+    { note: 'F4', freq: 349.23, type: 'white', key: 'F' },
+    { note: 'F#4', freq: 369.99, type: 'black', offset: 184, key: 'T' },
+    { note: 'G4', freq: 392.00, type: 'white', key: 'G' },
+    { note: 'G#4', freq: 415.30, type: 'black', offset: 234, key: 'Y' },
+    { note: 'A4', freq: 440.00, type: 'white', key: 'H' },
+    { note: 'A#4', freq: 466.16, type: 'black', offset: 284, key: 'U' },
+    { note: 'B4', freq: 493.88, type: 'white', key: 'J' },
+    { note: 'C5', freq: 523.25, type: 'white', key: 'K' },
+  ];
+
+  // Tasten erstellen
+  let whiteIndex = 0;
+  notes.forEach(n => {
+    const keyEl = document.createElement('div');
+    keyEl.classList.add('key', n.type);
+    keyEl.textContent = n.key;
+
+    if (n.type === 'white') {
+      keyEl.style.zIndex = 1;
+      keysContainer.appendChild(keyEl);
+      whiteIndex++;
+    } else {
+      keyEl.style.left = n.offset + 'px';
+      keysContainer.appendChild(keyEl);
+    }
+
+    keyEl.dataset.note = n.note;
+    keyEl.dataset.freq = n.freq;
+    keyEl.dataset.key = n.key;
+
+    keyEl.addEventListener('mousedown', () => playNote(n.freq, n.note, keyEl));
+    keyEl.addEventListener('mouseup', () => stopNote(n.freq, keyEl));
+    keyEl.addEventListener('mouseleave', () => stopNote(n.freq, keyEl));
+    keyEl.addEventListener('touchstart', (e) => { e.preventDefault(); playNote(n.freq, n.note, keyEl); });
+    keyEl.addEventListener('touchend', () => stopNote(n.freq, keyEl));
+  });
+
+  function playNote(freq, noteName, keyEl) {
+    if (activeOscillators.has(freq)) return;
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = currentWave;
+    osc.frequency.value = freq;
+
+    const now = ctx.currentTime;
+    const vol = parseFloat(volumeSlider.value);
+    const attack = parseFloat(attackSlider.value);
+
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(vol, now + attack);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+
+    activeOscillators.set(freq, { osc, gain });
+    keyEl.classList.add('active');
+    display.textContent = '♪ ' + noteName;
+  }
+
+  function stopNote(freq, keyEl) {
+    const entry = activeOscillators.get(freq);
+    if (!entry) return;
+
+    const { osc, gain } = entry;
+    const now = ctx.currentTime;
+    const release = parseFloat(releaseSlider.value);
+
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    gain.gain.linearRampToValueAtTime(0, now + release);
+
+    osc.stop(now + release);
+    activeOscillators.delete(freq);
+
+    keyEl.classList.remove('active');
+    if (activeOscillators.size === 0) display.textContent = 'READY';
+  }
+
+  // Tastatur-Steuerung
+  document.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    const keyEl = document.querySelector(`.key[data-key="${e.key.toUpperCase()}"]`);
+    if (keyEl) {
+      const freq = parseFloat(keyEl.dataset.freq);
+      const note = keyEl.dataset.note;
+      playNote(freq, note, keyEl);
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    const keyEl = document.querySelector(`.key[data-key="${e.key.toUpperCase()}"]`);
+    if (keyEl) {
+      const freq = parseFloat(keyEl.dataset.freq);
+      stopNote(freq, keyEl);
+    }
+  });
+
+  // Wave-Buttons
+  document.querySelectorAll('.wave-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.wave-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentWave = btn.dataset.wave;
+    });
+  });
+</script>
+</body>
+</html>

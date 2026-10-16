@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Neon Synth</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    background: radial-gradient(circle at 50% 0%, #1a1a2e, #0a0a15 70%);
+    font-family: 'Segoe UI', sans-serif;
+    color: #fff;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .synth {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(145deg, #1e1e2f, #14141f);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    position: relative;
+    box-shadow: inset 0 0 80px rgba(0, 255, 200, 0.05);
+  }
+
+  .synth::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #00ffc8, #ff00aa, transparent);
+    z-index: 10;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: #00ffc8;
+    text-shadow: 0 0 10px rgba(0, 255, 200, 0.6);
+    font-weight: 300;
+    flex-shrink: 0;
+  }
+
+  .top-bar {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  .wave-buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .wave-btn {
+    padding: 10px 16px;
+    background: #0a0a15;
+    border: 1px solid #333;
+    color: #666;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    touch-action: manipulation;
+    min-height: 44px;
+    min-width: 60px;
+  }
+
+  .wave-btn.active {
+    background: linear-gradient(180deg, #00ffc8, #009977);
+    color: #0a0a15;
+    border-color: #00ffc8;
+    box-shadow: 0 0 15px rgba(0, 255, 200, 0.6);
+  }
+
+  .octave-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #0a0a15;
+    border-radius: 8px;
+    padding: 4px 8px;
+    border: 1px solid #333;
+  }
+
+  .octave-btn {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(180deg, #2a2a3f, #14141f);
+    border: 1px solid #444;
+    color: #00ffc8;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    touch-action: manipulation;
+  }
+
+  .octave-btn:active {
+    background: #00ffc8;
+    color: #0a0a15;
+    box-shadow: 0 0 15px rgba(0, 255, 200, 0.8);
+  }
+
+  .octave-label {
+    font-family: 'Courier New', monospace;
+    color: #00ffc8;
+    font-size: 14px;
+    letter-spacing: 2px;
+    min-width: 40px;
+    text-align: center;
+    text-shadow: 0 0 8px rgba(0, 255, 200, 0.8);
+  }
+
+  .controls {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+  }
+
+  .knob-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 100px;
+    max-width: 200px;
+  }
+
+  .knob-group label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #888;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    background: #0a0a15;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+    touch-action: pan-y;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    background: radial-gradient(circle at 30% 30%, #00ffc8, #009977);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 
+      0 0 10px rgba(0, 255, 200, 0.8),
+      0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    background: radial-gradient(circle at 30% 30%, #00ffc8, #009977);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 255, 200, 0.8);
+  }
+
+  .keys-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+    min-height: 120px;
+    position: relative;
+  }
+
+  .keys {
+    display: flex;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  .key {
+    flex: 1;
+    background: linear-gradient(180deg, #f5f5f5, #d0d0d0);
+    border-radius: 0 0 8px 8px;
+    border: 1px solid #333;
+    border-top: none;
+    cursor: pointer;
+    transition: background 0.05s;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #888;
+    position: relative;
+    box-shadow: 
+      inset 0 -4px 8px rgba(0, 0, 0, 0.1),
+      0 4px 8px rgba(0, 0, 0, 0.4);
+    touch-action: none;
+  }
+
+  .key.white {
+    z-index: 1;
+  }
+
+  .key.white.active {
+    background: linear-gradient(180deg, #00ffc8, #009977);
+    color: #fff;
+    transform: translateY(2px);
+    box-shadow: 
+      inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+      0 0 25px rgba(0, 255, 200, 0.9);
+  }
+
+  .key.black {
+    flex: none;
+    width: 6%;
+    height: 60%;
+    background: linear-gradient(180deg, #333, #0a0a15);
+    color: #666;
+    position: absolute;
+    top: 0;
+    z-index: 2;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 
+      inset 0 -3px 6px rgba(255, 255, 255, 0.05),
+      0 5px 10px rgba(0, 0, 0, 0.8);
+    padding-bottom: 10px;
+  }
+
+  .key.black.active {
+    background: linear-gradient(180deg, #009977, #006644);
+    color: #fff;
+    transform: translateY(2px);
+    box-shadow: 
+      inset 0 -2px 4px rgba(0, 0, 0, 0.5),
+      0 0 25px rgba(0, 255, 200, 0.9);
+  }
+
+  .display {
+    height: 40px;
+    background: #0a0a15;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    font-family: 'Courier New', monospace;
+    color: #00ffc8;
+    letter-spacing: 3px;
+    font-size: 14px;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 0 8px rgba(0, 255, 200, 0.8);
+    flex-shrink: 0;
+  }
+
+  .display .label {
+    font-size: 10px;
+    color: #666;
+    letter-spacing: 2px;
+  }
+
+  /* Orientierungshinweis */
+  @media (orientation: portrait) and (max-width: 768px) {
+    .rotate-hint {
+      display: flex;
+    }
+  }
+
+  .rotate-hint {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(10, 10, 21, 0.95);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 20px;
+    color: #00ffc8;
+    font-size: 16px;
+    letter-spacing: 3px;
+    text-align: center;
+    padding: 30px;
+  }
+
+  .rotate-hint .icon {
+    font-size: 60px;
+    animation: rotate 2s ease-in-out infinite;
+  }
+
+  @keyframes rotate {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+  }
+
+  /* Tablet / große Touch-Geräte */
+  @media (min-width: 768px) {
+    .synth { padding: 25px 30px; gap: 18px; }
+    h1 { font-size: 18px; letter-spacing: 8px; }
+    .wave-btn { padding: 12px 20px; font-size: 13px; }
+    .octave-btn { width: 48px; height: 48px; font-size: 24px; }
+    .display { height: 48px; font-size: 16px; }
+    .knob-group label { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+  <div class="rotate-hint">
+    <div class="icon">📱</div>
+    <div>Bitte Gerät drehen</div>
+    <div style="font-size: 12px; color: #666;">Für die beste Erfahrung</div>
+  </div>
+
+  <div class="synth">
+    <h1>◆ Neon Synth ◆</h1>
+
+    <div class="top-bar">
+      <div class="wave-buttons">
+        <button class="wave-btn active" data-wave="sine">Sine</button>
+        <button class="wave-btn" data-wave="square">Square</button>
+        <button class="wave-btn" data-wave="sawtooth">Saw</button>
+        <button class="wave-btn" data-wave="triangle">Triangle</button>
+      </div>
+
+      <div class="octave-control">
+        <button class="octave-btn" id="octDown">−</button>
+        <div class="octave-label" id="octLabel">C4</div>
+        <button class="octave-btn" id="octUp">+</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="knob-group">
+        <label>Volume</label>
+        <input type="range" id="volume" min="0" max="1" step="0.01" value="0.3">
+      </div>
+      <div class="knob-group">
+        <label>Attack</label>
+        <input type="range" id="attack" min="0.01" max="1" step="0.01" value="0.05">
+      </div>
+      <div class="knob-group">
+        <label>Release</label>
+        <input type="range" id="release" min="0.05" max="2" step="0.05" value="0.4">
+      </div>
+    </div>
+
+    <div class="keys-wrapper">
+      <div class="keys" id="keys"></div>
+    </div>
+
+    <div class="display">
+      <span class="label">NOTE</span>
+      <span id="display">READY</span>
+      <span class="label" id="waveDisplay">SINE</span>
+    </div>
+  </div>
+
+<script>
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const ctx = new AudioContext();
+
+  const keysContainer = document.getElementById('keys');
+  const display = document.getElementById('display');
+  const waveDisplay = document.getElementById('waveDisplay');
+  const octLabel = document.getElementById('octLabel');
+  const volumeSlider = document.getElementById('volume');
+  const attackSlider = document.getElementById('attack');
+  const releaseSlider = document.getElementById('release');
+
+  let currentWave = 'sine';
+  let currentOctave = 4; // 2, 3, 4, 5, 6
+  const MIN_OCT = 2;
+  const MAX_OCT = 6;
+
+  const activeOscillators = new Map(); // pointerId -> { osc, gain, keyEl, freq }
+
+  // Basis-Noten innerhalb einer Oktave (Halbton-Abstände)
+  const WHITE_NOTES = [
+    { name: 'C', semitone: 0 },
+    { name: 'D', semitone: 2 },
+    { name: 'E', semitone: 4 },
+    { name: 'F', semitone: 5 },
+    { name: 'G', semitone: 7 },
+    { name: 'A', semitone: 9 },
+    { name: 'B', semitone: 11 },
+  ];
+
+  const BLACK_NOTES = [
+    { name: 'C#', semitone: 1, afterWhite: 0 }, // nach C
+    { name: 'D#', semitone: 3, afterWhite: 1 }, // nach D
+    { name: 'F#', semitone: 6, afterWhite: 3 }, // nach F
+    { name: 'G#', semitone: 8, afterWhite: 4 }, // nach G
+    { name: 'A#', semitone: 10, afterWhite: 5 }, // nach A
+  ];
+
+  const KEYBOARD_MAP = ['A', 'W', 'S', 'E', 'D', 'F', 'T', 'G', 'Y', 'H', 'U', 'J', 'K'];
+
+  let keyElements = []; // { el, note, freq, type }
+
+  function freqFor(semitone, octave) {
+    // A4 = 440 Hz, semitone 9 in octave 4
+    const distanceFromA4 = (octave - 4) * 12 + (semitone - 9);
+    return 440 * Math.pow(2, distanceFromA4 / 12);
+  }
+
+  function buildKeyboard() {
+    keysContainer.innerHTML = '';
+    keyElements = [];
+
+    const whiteCount = WHITE_NOTES.length;
+
+    // Weiße Tasten
+    WHITE_NOTES.forEach((n, i) => {
+      const el = document.createElement('div');
+      el.classList.add('key', 'white');
+      const freq = freqFor(n.semitone, currentOctave);
+      const noteName = n.name + currentOctave;
+      el.textContent = KEYBOARD_MAP[i];
+      el.dataset.freq = freq;
+      el.dataset.note = noteName;
+      keysContainer.appendChild(el);
+      keyElements.push({ el, note: noteName, freq, type: 'white' });
+    });
+
+    // Schwarze Tasten – prozentuale Positionierung
+    BLACK_NOTES.forEach((n) => {
+      const el = document.createElement('div');
+      el.classList.add('key', 'black');
+      const freq = freqFor(n.semitone, currentOctave);
+      const noteName = n.name + currentOctave;
+      el.textContent = '';
+      el.dataset.freq = freq;
+      el.dataset.note = noteName;
+
+      // Position: nach der White-Taste "afterWhite"
+      // Weiße Tasten haben Breite = 100/whiteCount %
+      // Linke Kante der Taste afterWhite+1 = (afterWhite+1) * 100/whiteCount
+      const leftPercent = ((n.afterWhite + 1) * 100 / whiteCount) - 3;
+      el.style.left = leftPercent + '%';
+
+      keysContainer.appendChild(el);
+      keyElements.push({ el, note: noteName, freq, type: 'black' });
+    });
+  }
+
+  function playNote(freq, noteName, el, pointerId) {
+    if (ctx.state === 'suspended') ctx.resume();
+    if (activeOscillators.has(pointerId)) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = currentWave;
+    osc.frequency.value = freq;
+
+    const now = ctx.currentTime;
+    const vol = parseFloat(volumeSlider.value);
+    const attack = parseFloat(attackSlider.value);
+
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(vol, now + attack);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+
+    activeOscillators.set(pointerId, { osc, gain, el, freq });
+    el.classList.add('active');
+    display.textContent = noteName;
+  }
+
+  function stopNote(pointerId) {
+    const entry = activeOscillators.get(pointerId);
+    if (!entry) return;
+
+    const { osc, gain, el } = entry;
+    const now = ctx.currentTime;
+    const release = parseFloat(releaseSlider.value);
+
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    gain.gain.linearRampToValueAtTime(0, now + release);
+
+    osc.stop(now + release);
+    el.classList.remove('active');
+    activeOscillators.delete(pointerId);
+
+    if (activeOscillators.size === 0) display.textContent = 'READY';
+  }
+
+  function getKeyAtPoint(x, y) {
+    const target = document.elementFromPoint(x, y);
+    if (target && target.classList.contains('key')) return target;
+    return null;
+  }
+
+  // Pointer-Events mit Wisch-Unterstützung
+  let isPointerDown = false;
+
+  keysContainer.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    keysContainer.setPointerCapture(e.pointerId);
+    isPointerDown = true;
+
+    const keyEl = getKeyAtPoint(e.clientX, e.clientY);
+    if (keyEl) {
+      playNote(parseFloat(keyEl.dataset.freq), keyEl.dataset.note, keyEl, e.pointerId);
+    }
+  });
+
+  keysContainer.addEventListener('pointermove', (e) => {
+    if (!isPointerDown) return;
+    e.preventDefault();
+
+    const currentEntry = activeOscillators.get(e.pointerId);
+    const keyEl = getKeyAtPoint(e.clientX, e.clientY);
+
+    if (!keyEl) {
+      // Finger außerhalb der Tasten → Note stoppen
+      if (currentEntry) stopNote(e.pointerId);
+      return;
+    }
+
+    const newFreq = parseFloat(keyEl.dataset.freq);
+    const newNote = keyEl.dataset.note;
+
+    // Gleiche Taste? Nichts tun
+    if (currentEntry && currentEntry.el === keyEl) return;
+
+    // Alte Note stoppen, neue starten (Glissando über Tastatur)
+    if (currentEntry) stopNote(e.pointerId);
+    playNote(newFreq, newNote, keyEl, e.pointerId);
+  });
+
+  keysContainer.addEventListener('pointerup', (e) => {
+    isPointerDown = false;
+    stopNote(e.pointerId);
+  });
+
+  keysContainer.addEventListener('pointercancel', (e) => {
+    isPointerDown = false;
+    stopNote(e.pointerId);
+  });
+
+  // Oktaven-Buttons
+  document.getElementById('octUp').addEventListener('click', () => {
+    if (currentOctave < MAX_OCT) {
+      currentOctave++;
+      updateOctave();
+    }
+  });
+
+  document.getElementById('octDown').addEventListener('click', () => {
+    if (currentOctave > MIN_OCT) {
+      currentOctave--;
+      updateOctave();
+    }
+  });
+
+  function updateOctave() {
+    octLabel.textContent = 'C' + currentOctave;
+    buildKeyboard();
+  }
+
+  // Wave-Buttons
+  document.querySelectorAll('.wave-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.wave-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentWave = btn.dataset.wave;
+      waveDisplay.textContent = currentWave.toUpperCase();
+    });
+  });
+
+  // Tastatur (nur auf Desktop)
+  document.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    const idx = KEYBOARD_MAP.indexOf(e.key.toUpperCase());
+    if (idx === -1) return;
+    const entry = keyElements[idx];
+    if (entry && !activeOscillators.has('kb-' + idx)) {
+      playNote(entry.freq, entry.note, entry.el, 'kb-' + idx);
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    const idx = KEYBOARD_MAP.indexOf(e.key.toUpperCase());
+    if (idx === -1) return;
+    stopNote('kb-' + idx);
+  });
+
+  // AudioContext nach erster Interaktion entsperren
+  document.addEventListener('touchstart', () => {
+    if (ctx.state === 'suspended') ctx.resume();
+  }, { once: true });
+
+  document.addEventListener('click', () => {
+    if (ctx.state === 'suspended') ctx.resume();
+  }, { once: true });
+
+  // Initial
+  buildKeyboard();
+  waveDisplay.textContent = 'SINE';
+</script>
+</body>
+</html>
